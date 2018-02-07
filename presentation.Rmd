@@ -1,0 +1,75 @@
+---
+output: ioslides presentation
+---
+
+
+```{r setup, include = FALSE}
+
+knitr::opts_chunk$set(echo = FALSE,
+                      fig.width = 7,
+                      fig.asp = 0.618,
+                      fig.align = "center")
+
+
+# read in the data, and organize it into a tidy format
+
+library(tidyverse)
+library(stringr)
+
+demos <- read_csv("demos.csv")
+
+test <- read_csv("test_scores.csv")
+
+# actually some of the items in demos and others are related
+# to discipline, so we should extract those
+demos_tidy <- demos %>% 
+  slice(1:7) %>% 
+  gather(year, value, 2:5) %>% 
+  rename(category = X1) %>% 
+  mutate(value = str_extract(value, "[0-9]+"),
+         pct = as.numeric(value) * .01) # extract the percentages
+
+# add in a total students for each year
+total <- demos_tidy %>% 
+  filter(str_detect(category, "Total")) %>% 
+  select(-category,
+         -pct,
+         total = value) %>% 
+  mutate(total = as.numeric(total))
+
+# and then multiply by percent to give the number in each category
+
+demos_tidy <- demos_tidy %>% 
+  filter(!str_detect(category, "Total")) %>% 
+  left_join(total, by = "year") %>% 
+  mutate(count = total * pct,
+         category = str_replace(category, "% ", "")) %>% 
+  select(-value)
+
+# now moving on to test scores
+test_tidy <- test %>% 
+  gather(year, pct_prof, 3:6) %>% 
+  mutate(subj = str_extract(`Academic Years`, "reading|math"),
+         pct_prof = as.numeric(str_replace(pct_prof, "%", "")) * .01) %>% 
+  select(-`Academic Years`,
+         grade = X2)
+  
+# and finally the climate related items
+climate <- demos %>% 
+  slice(8:11) %>% 
+  gather(year, value, 2:5) %>% 
+  
+
+```
+
+
+
+```{r}
+
+demos_tidy %>% 
+  ggplot(aes(x = year, y = pct, group = category, color = category)) +
+    geom_line(size = 2)
+
+
+```
+
