@@ -5,6 +5,7 @@ output: ioslides_presentation
 ```{r setup, include = FALSE}
 
 knitr::opts_chunk$set(echo = FALSE,
+                      warning = FALSE,
                       fig.width = 10,
                       fig.asp = 0.618,
                       fig.align = "center")
@@ -14,6 +15,7 @@ knitr::opts_chunk$set(echo = FALSE,
 
 library(tidyverse)
 library(stringr)
+library(modelr)
 
 demos <- read_csv("demos.csv")
 
@@ -56,7 +58,7 @@ out <- test %>%
   select(-`Academic Years`,
          grade = X2) %>% 
   unite(obs, grade, subj, sep = " ") %>% 
-  mutate(obs = paste0(obs, " prof"))
+  mutate(obs = paste0(obs, " prof")) 
 
 # we will add % with >95% attendance and pct with 0 suspensions (climate) 
 # into the outcomes table, because it might be helpful to look at them together
@@ -87,18 +89,22 @@ discipline <- demos %>%
 ```
 
 
-## Changes in demographics
+## Finding 1
+
+Substantial changes in student population, 
+
+
 ```{r}
-
 demos_tidy %>% 
-  ggplot(aes(x = year, y = pct, group = category, color = category)) +
+  filter(!category %in% c("IEP", "ELLs")) %>% 
+  group_by(year) %>% 
+  summarise(total = sum(count)) %>% 
+  ggplot(aes(x = year, y = total, group = 1)) + 
     geom_line(size = 2)
-
 ```
 
 
 ```{r}
-
 demos_tidy %>% 
   filter(year %in% c("2013-2014", "2016-2017")) %>% 
   select(-pct, -total) %>% 
@@ -107,7 +113,6 @@ demos_tidy %>%
   ggplot(aes(category, pct_change)) +
     geom_bar(stat = "identity") + 
     scale_y_continuous(limits = c(-3, 3)) 
-
 ```
 
 ## Changes in climate
@@ -116,22 +121,29 @@ demos_tidy %>%
 discipline %>% 
   ggplot(aes(year, count, group = type, color = type)) + 
     geom_line(size = 2)
-
 ```
 
 
 ## Changes in outcomes
 ```{r}
-
 out %>% 
-  ggplot(aes(year, pct, group = obs, color = obs)) + 
-    geom_line(size = 2)
-
+  mutate(
+    type = case_when(
+      str_detect(obs, "reading") ~ "reading",
+      str_detect(obs, "math") ~ "math",
+      TRUE ~ "climate"),
+    alpha = case_when(
+     str_detect(obs, "6th") ~ 0,
+     str_detect(obs, "7th") ~ .5,
+     str_detect(obs, "8th") ~ 1,
+     TRUE ~ 2)
+  ) %>% 
+  ggplot(aes(year, pct, group = obs, color = type, alpha = alpha)) + 
+    geom_line(size = 2) 
 
 ```
 
 ```{r}
-
 change_pct <- function(start, x) {
   x <- (x - start) / start
   x
@@ -150,10 +162,9 @@ out_wide$`2013-2014` <- 0
 
 out_wide %>% 
   gather(year, pct_change, 2:5) %>% 
-  ggplot(aes(year, pct_change, color = obs, group = obs)) +
-    geom_line(size = 2, alpha = 0.75)
-
-  
+  ggplot(aes(year, pct_change)) +
+    geom_line(aes(color = obs, group = obs), size = 2, alpha = 0.75) + 
+    geom_smooth()
 ```
 
 
@@ -164,5 +175,105 @@ out %>%
   mutate(pct_change = (`2016-2017` - `2013-2014`) / `2013-2014`) %>% 
   ggplot(aes(str_wrap(obs, 10), pct_change)) +
     geom_bar(stat = "identity")
+```
+
+## Model
+
+```{r}
+
+nested <- out %>% 
+  separate(year, c("year1", "year2"), sep = "-", convert = TRUE) %>% 
+  group_by(obs) %>% 
+  nest()
+
+obs_model <- function(df) {
+  lm(pct ~ year1, data = df)
+}
+
+out_trends <- nested %>% 
+  mutate(
+    model = map(data, obs_model),
+    residuals = map2(data, model, add_residuals) ,
+    predictions = map2(data, model, add_predictions)
+  )
+    
+out_trends %>% 
+  unnest(predictions) %>% 
+  ggplot(aes(year1, pred)) +
+    geom_line(aes(group = obs, color = obs)) +
+    geom_smooth()
+
+out_trends %>% 
+  unnest(residuals) %>% 
+  ggplot(aes(year1, resid)) +
+    geom_line(aes(group = obs, color = obs)) + 
+    geom_smooth()
+
+```
+
+One hypothesis is that the changing demographics are affecting the outcomes.
+
+Let's account for the percent of white students in our model to see if that changes things. 
+
+```{r}
+pct_white <- demos_tidy %>% 
+  filter(category == "Black") %>% 
+  select(year,
+         pct_race = pct)
+
+demos_out <- out %>% 
+  left_join(pct_race, by = "year") %>% 
+  separate(year, "year", sep = "-", convert = TRUE) %>% 
+  group_by(obs) %>% 
+  nest()
+
+demos_model <- function(df) {
+  lm(pct ~ pct_race, data = df)
+}
+
+demos_out %>% 
+  mutate(
+    model = map(data, demos_model),
+    residuals = map2(data, model, add_residuals)
+  ) %>% 
+  unnest(residuals) %>% 
+  ggplot(aes(year, resid)) + 
+    geom_line(aes(group = obs)) + 
+    geom_smooth()
+
+```
+
+Can we extend the same analysis for other categories? 
+
+```{r}
+
+demos_all <- demos_tidy %>% 
+  select(year,
+         category,
+         pct_race = pct)
+
+out_all_demos <- out %>% 
+  left_join(demos_all, by = "year") %>% 
+  separate(year, "year", sep = "-", convert = TRUE) %>% 
+  group_by(category) %>% 
+  nest()
+
+demos_model2 <- function(df) {
+  lm(pct ~ pct_race, data = df)
+}
+
+out_all_demos %>% 
+  mutate(
+    model = map(data, demos_model),
+    residuals = map2(data, model, add_residuals),
+    predictions = map2(data, model, add_predictions)
+  ) %>% 
+  unnest(residuals) %>% 
+  unite(obs_cat, obs, category) %>% 
+  ggplot(aes(year, resid)) +
+    geom_line(aes(group = obs_cat), alpha = .25) +
+    geom_smooth(se = FALSE) +
+    geom_hline(yintercept = 0, color = "black", linetype = 2)
+
 ```
 
