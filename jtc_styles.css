@@ -1,0 +1,26 @@
+<link href="https://fonts.googleapis.com/css?family=Open+Sans|Merriweather" rel="stylesheet">
+
+body{
+  font-family: "Open Sans";
+  font-size: 1em;
+  background-color:#4f4f4f;
+}
+h1{font-family: 'Merriweather'; font-size: 2em;}
+h2{font-family: 'Merriweather'; font-size: 1.75em; color:#6b7a8f;}
+h3{font-family: 'Merriweather'; font-size: 1.5em; color:#6b7a8f;}
+h4{font-family: 'Merriweather'; font-size: 1.25em; color:#6b7a8f;}
+h5{font-family: 'Merriweather'; font-size: 1em; color:#6b7a8f;}
+h6{font-family: 'Merriweather'; font-size: .75em; color:#6b7a8f;}
+blockquote, ul{
+  font-size:.8em;
+}
+p{
+  font-family: "Open Sans";
+  font-size: 1em;
+  color: #4f4f4f;
+}
+ul{
+  font-family: "Open Sans";
+  font-size: 1em;
+  color: #4f4f4f
+}

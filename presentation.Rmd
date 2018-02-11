@@ -1,5 +1,9 @@
 ---
-output: ioslides_presentation
+title: "District Middle School: Data Analysis and Plan"
+date: "2-12-2018"
+output: 
+  ioslides_presentation:
+    css: jtc_styles.css
 ---
 
 ```{r setup, include = FALSE}
@@ -92,7 +96,6 @@ discipline <- demos %>%
 
 ```
 
-
 ## Finding 1
 
 Student body size drecreased until most recent school year, while referrals and suspensions increased until most recent year, when each pattern reversed.
@@ -109,8 +112,8 @@ demos_tidy %>%
                             "suspensions")) %>% 
   ggplot(aes(x = year, y = count, group = type, color = type)) + 
     geom_line(size = 2) +
-    labs(title = str_wrap("Referrals follow opposite pattern of student body",
-                          30), 
+    labs(title = str_wrap("Referrals follow opposite pattern of student body size",
+                          35), 
          color = NULL,
          x = "school year") + 
     jtc
@@ -139,7 +142,8 @@ demos_tidy %>%
          x = "category", 
          title = "Change in demographic categories",
          subtitle = "SY13-14 to SY1617") + 
-    jtc
+    jtc 
+
 ```
 
 ## Finding 3
@@ -147,7 +151,6 @@ demos_tidy %>%
 Test scores decrease when the student body is more African-American, but increase with each other category. 
 
 ```{r}
-
 test_scores <- out %>% 
   filter(str_detect(obs, "prof")) 
 
@@ -172,15 +175,45 @@ test_scores %>%
          y = "residuals - test scores") + 
     jtc +
     theme(text = element_text(size = 11))
-
 ```
 
-## Hypotheses
-#### Changes in neighborhood context
-- Steady increase in White students and decrease in African-American students suggest changing neighorhood demographics
+## Further Exploration
 
-#### Changes in district policy
-- Increase in student body sizein most recent year suggest changes in district policy such as catchment zone or other school closing
+#### Evidence suggests that positive changes in recent year may reflect more about changes in student body make-up than school culutre
 
-#### Changes in school context
-- Changes in discipline referrals suggest change in leadership or discipline policy
+- Additional data exploration is needed to understand how school and neighborhood context combine to increase student achievement
+    - disaggregate test score and discipline information by race
+- 
+
+## Strategic plan
+- 
+
+## Turnaround Principle 6: Safe school environment
+
+#### Rationale
+- High rates of discipline referrals and suspension
+- Decrease in most recent year may or may not reflection positive change
+
+#### Work with principal to:
+- Understand discipline procedures and systems
+- Explore disagreggated discipline data and trends over time
+
+## Turnaround Principle 6: Safe school environment
+
+- Conduct surveys of staff, students, and families
+- Implement school-wide positive behavioral supports
+- Encourage restorative practices
+
+## Parent tip
+
+### Academic Parent-Teacher Teams (APTT)
+
+Adapated from [this](https://vimeo.com/161258860) resource for middle school students and focusing on safe school environment
+
+- Initial focus on behavioral supports transitioning to specific academic standards
+- Review data anonymized data about student behavior and achievement
+- Parents set SMART goals with students
+- Teachers share strategies for practicing skils at home
+- Inviting parents in to school has added benefit of improving safety and culture
+
+
