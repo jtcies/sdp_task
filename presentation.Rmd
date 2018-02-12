@@ -1,9 +1,10 @@
 ---
-title: "District Middle School: Data Analysis and Plan"
-date: "2-12-2018"
-output: 
+title: 'District Middle School: Data Analysis and Plan'
+output:
   ioslides_presentation:
     css: jtc_styles.css
+    widescreen: true
+date: "2-12-2018"
 ---
 
 ```{r setup, include = FALSE}
@@ -98,21 +99,31 @@ discipline <- demos %>%
 
 ## Finding 1
 
-Student body size drecreased until most recent school year, while referrals and suspensions increased until most recent year, when each pattern reversed.
+Student body size steadily decreased until most recent year when it increased. School climate indicators apear to show positive change in last year. 
 
 ```{r}
-demos_tidy %>% 
+
+count <- demos_tidy %>% 
   filter(!category %in% c("IEP", "ELLs")) %>% 
   group_by(year) %>% 
   summarise(count = sum(count)) %>% 
-  mutate(type = "total students") %>% 
-  bind_rows(discipline) %>% 
+  mutate(type = "total students")
+
+attend <- out %>% 
+  filter(obs == "95% attendance")  %>% 
+  mutate(type = "95% attendance") %>% 
+  left_join(count %>% select(year, total = count), by = "year") %>% 
+  mutate(count = pct * total)
+
+bind_rows(count, attend, discipline) %>% 
   mutate(type = fct_relevel(type, "total students", 
                             "referrals",
-                            "suspensions")) %>% 
+                            "suspensions",
+                            "95% attendance")) %>% 
   ggplot(aes(x = year, y = count, group = type, color = type)) + 
-    geom_line(size = 2) +
-    labs(title = str_wrap("Referrals follow opposite pattern of student body size",
+    geom_line(size = 2.5) +
+    geom_point(alpha= 0.5, size = 5, show.legend = FALSE) + 
+    labs(title = str_wrap("School climate shows bump in recent year",
                           35), 
          color = NULL,
          x = "school year") + 
@@ -177,43 +188,59 @@ test_scores %>%
     theme(text = element_text(size = 11))
 ```
 
-## Further Exploration
+## Strategic Plan: Further Exploration
 
-#### Evidence suggests that positive changes in recent year may reflect more about changes in student body make-up than school culutre
+#### Evidence suggests that positive changes in recent year may not hold-up when viewed with equity lens
+<p>
+#### Next steps
+<p>
+- Disaggregate test score and discipline data by race
+- Collect additional data through teacher observations and progress monitoring (such as CDT)
+- Incoporate neighborhood context through census data
 
-- Additional data exploration is needed to understand how school and neighborhood context combine to increase student achievement
-    - disaggregate test score and discipline information by race
-- 
+## Strategic Plan: Action Steps
 
-## Strategic plan
-- 
+- Encourage teacher collaboartion
+    - time to review data
+    - allow 6th grade reading teachers to share best practices
+- Research and implement evidence-based intervention based on data review
+    - priority in 7th grade mathematics
+- Connect principal with mentor
+- Engage parents through parent committee, digital communication, and APTT (below)
+- Establish partnerships with community organizations particularly focused on attendance and student engagement
 
 ## Turnaround Principle 6: Safe school environment
 
 #### Rationale
+<p>
 - High rates of discipline referrals and suspension
-- Decrease in most recent year may or may not reflection positive change
+- Low rates of attendance
+- Improvement in most recent year may or may not reflect true positive change
 
 #### Work with principal to:
+<p>
 - Understand discipline procedures and systems
 - Explore disagreggated discipline data and trends over time
 
 ## Turnaround Principle 6: Safe school environment
 
+#### Implementation plan
+<p>
 - Conduct surveys of staff, students, and families
-- Implement school-wide positive behavioral supports
-- Encourage restorative practices
+- Develop school-wide positive behavioral support system
+    - focus on attendance
+- Establish restorative practice procedures
 
 ## Parent tip
 
 ### Academic Parent-Teacher Teams (APTT)
-
-Adapated from [this](https://vimeo.com/161258860) resource for middle school students and focusing on safe school environment
+<p>
+Research validated program, developed by San Juan Unified Elementary, adapated for middle school context
 
 - Initial focus on behavioral supports transitioning to specific academic standards
-- Review data anonymized data about student behavior and achievement
+- Review anonymized data about student behavior and achievement
 - Parents set SMART goals with students
-- Teachers share strategies for practicing skils at home
-- Inviting parents in to school has added benefit of improving safety and culture
+- Teachers share strategies for practicing skills at home
+- Inviting parents in to school has potential benefit of improving climate
 
 
